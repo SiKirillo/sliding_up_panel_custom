@@ -1,3 +1,11 @@
+## [2.1.0] - [November 7, 2024]
+### Features
+- Code style refactoring
+- Some small performance improvements
+
+### Documentation
+- Updated documentation to reflect new features and fixes
+
 ## [2.0.0+1] - [April 26, 2021]
 ### Features
 - Formatted code according to dartfmt
