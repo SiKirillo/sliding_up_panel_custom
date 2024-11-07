@@ -1,7 +1,7 @@
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
-import 'package:sliding_up_panel_custom/sliding_up_panel.dart';
+import 'package:sliding_up_panel_custom/sliding_up_panel_custom.dart';
 import 'package:flutter/services.dart';
 
 import 'package:flutter_map/flutter_map.dart';

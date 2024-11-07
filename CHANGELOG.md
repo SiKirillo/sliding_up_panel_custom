@@ -1,3 +1,7 @@
+## [2.1.0+1] - [November 7, 2024]
+### Features
+- License update
+
 ## [2.1.0] - [November 7, 2024]
 ### Features
 - Code style refactoring
