@@ -1,3 +1,8 @@
+## [2.1.0+2] - [November 11, 2024]
+### Features
+- Slide animation fix
+- Added notify listener to PanelController
+
 ## [2.1.0+1] - [November 7, 2024]
 ### Features
 - License update

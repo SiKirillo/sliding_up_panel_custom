@@ -43,45 +43,49 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  final double _initFabHeight = 120.0;
-  double _fabHeight = 0.0;
+  final _controller = PanelController();
+  final _initHeight = 120.0;
+  double _height = 0.0;
+
   double _panelHeightOpen = 0.0;
   double _panelHeightClosed = 95.0;
 
   @override
   void initState() {
     super.initState();
-    _fabHeight = _initFabHeight;
+    _height = _initHeight;
   }
 
   @override
   Widget build(BuildContext context) {
     _panelHeightOpen = MediaQuery.of(context).size.height * 0.8;
-
     return Material(
       child: Stack(
         alignment: Alignment.topCenter,
         children: <Widget>[
           SlidingUpPanel(
-            maxHeight: _panelHeightOpen,
-            minHeight: _panelHeightClosed,
-            parallaxEnabled: true,
-            parallaxOffset: 0.5,
-            body: _body(),
+            controller: _controller,
             panelBuilder: (sc) => _panel(sc),
-            borderRadius: BorderRadius.only(
-              topLeft: Radius.circular(18.0),
-              topRight: Radius.circular(18.0),
+            body: _body(),
+            options: SlidingUpPanelOptions(
+              maxHeight: _panelHeightOpen,
+              minHeight: _panelHeightClosed,
+              parallaxEnabled: true,
+              parallaxOffset: 0.5,
+              borderRadius: BorderRadius.only(
+                topLeft: Radius.circular(18.0),
+                topRight: Radius.circular(18.0),
+              ),
             ),
             onPanelSlide: (double pos) {
               setState(() {
-                _fabHeight = pos * (_panelHeightOpen - _panelHeightClosed) + _initFabHeight;
+                _height = pos * (_panelHeightOpen - _panelHeightClosed) + _initHeight;
               });
             },
           ),
           Positioned(
             right: 20.0,
-            bottom: _fabHeight,
+            bottom: _height,
             child: FloatingActionButton(
               onPressed: () {},
               backgroundColor: Colors.white,
