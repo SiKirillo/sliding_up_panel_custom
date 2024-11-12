@@ -1,3 +1,7 @@
+## [2.1.0+3] - [November 12, 2024]
+### Features
+- Added onAttached callback
+
 ## [2.1.0+2] - [November 11, 2024]
 ### Features
 - Slide animation fix

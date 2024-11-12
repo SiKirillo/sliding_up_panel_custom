@@ -74,6 +74,10 @@ class SlidingUpPanel extends StatefulWidget {
   /// is fully collapsed.
   final VoidCallback? onPanelClosed;
 
+  /// If non-null, this callback is called when the controller
+  /// receives the state of the panel.
+  final VoidCallback? onAttached;
+
   const SlidingUpPanel({
     super.key,
     this.controller,
@@ -87,6 +91,7 @@ class SlidingUpPanel extends StatefulWidget {
     this.onPanelSlide,
     this.onPanelOpened,
     this.onPanelClosed,
+    this.onAttached,
   }) : assert(panel != null || panelBuilder != null);
 
   @override
@@ -141,7 +146,7 @@ class _SlidingUpPanelState extends State<SlidingUpPanel> with SingleTickerProvid
       if (widget.options.isDraggable && !_scrollingEnabled) _sc.jumpTo(0);
     });
 
-    widget.controller?._addState(this);
+    widget.controller?._addState(this, widget.onAttached);
   }
 
   @override
@@ -541,8 +546,11 @@ class _SlidingUpPanelState extends State<SlidingUpPanel> with SingleTickerProvid
 class PanelController with ChangeNotifier {
   _SlidingUpPanelState? _panelState;
 
-  void _addState(_SlidingUpPanelState panelState) {
+  void _addState(_SlidingUpPanelState panelState, VoidCallback? onAttached) {
     _panelState = panelState;
+    if (onAttached != null) {
+      onAttached();
+    }
   }
 
   /// Determine if the panelController is attached to an instance
