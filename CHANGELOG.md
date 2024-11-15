@@ -1,3 +1,8 @@
+## [2.1.1] - [November 15, 2024]
+### Features
+- Added changeable panel's maxHeight value. You can set new maxHeight value using PanelController.open() or PanelController.animatePanelToMaxHeight() functions
+- Added onPanelMaxHeightUpdated callback
+
 ## [2.1.0+3] - [November 12, 2024]
 ### Features
 - Added onAttached callback

@@ -74,6 +74,10 @@ class SlidingUpPanel extends StatefulWidget {
   /// is fully collapsed.
   final VoidCallback? onPanelClosed;
 
+  /// If non-null, this callback is called when the panel's
+  /// [_maxHeight] value changes.
+  final void Function(double position)? onPanelMaxHeightUpdated;
+
   /// If non-null, this callback is called when the controller
   /// receives the state of the panel.
   final VoidCallback? onAttached;
@@ -91,6 +95,7 @@ class SlidingUpPanel extends StatefulWidget {
     this.onPanelSlide,
     this.onPanelOpened,
     this.onPanelClosed,
+    this.onPanelMaxHeightUpdated,
     this.onAttached,
   }) : assert(panel != null || panelBuilder != null);
 
@@ -98,18 +103,21 @@ class SlidingUpPanel extends StatefulWidget {
   State<SlidingUpPanel> createState() => _SlidingUpPanelState();
 }
 
-class _SlidingUpPanelState extends State<SlidingUpPanel> with SingleTickerProviderStateMixin {
+class _SlidingUpPanelState extends State<SlidingUpPanel> with TickerProviderStateMixin {
   late final AnimationController _ac;
   late final ScrollController _sc;
 
   bool _scrollingEnabled = false;
   final VelocityTracker _vt = VelocityTracker.withKind(PointerDeviceKind.touch);
 
+  final _sliderKey = GlobalKey();
+  double _maxHeight = 0.0;
   bool _isPanelVisible = true;
 
   @override
   void initState() {
     super.initState();
+    _maxHeight = widget.options.initialMaxHeight;
     _ac = AnimationController(
         vsync: this,
         duration: const Duration(milliseconds: 300),
@@ -147,6 +155,12 @@ class _SlidingUpPanelState extends State<SlidingUpPanel> with SingleTickerProvid
     });
 
     widget.controller?._addState(this, widget.onAttached);
+  }
+
+  @override
+  void dispose() {
+    _ac.dispose();
+    super.dispose();
   }
 
   @override
@@ -208,93 +222,98 @@ class _SlidingUpPanelState extends State<SlidingUpPanel> with SingleTickerProvid
             !_isPanelVisible
                 ? Container()
                 : _gestureHandler(
-                    child: AnimatedBuilder(
-                      animation: _ac,
-                      builder: (context, child) {
-                        return Container(
-                          height: _ac.value * (widget.options.maxHeight - widget.options.minHeight) + widget.options.minHeight,
-                          margin: widget.options.margin,
-                          padding: widget.options.padding,
-                          decoration: widget.options.renderPanelSheet
-                              ? BoxDecoration(
-                                  border: widget.options.border,
-                                  borderRadius: widget.options.borderRadius,
-                                  boxShadow: widget.options.boxShadow,
-                                  color: widget.options.color,
-                                )
-                              : null,
-                          child: child,
+                    child: StatefulBuilder(
+                      key: _sliderKey,
+                      builder: (context, state) {
+                        return AnimatedBuilder(
+                          animation: _ac,
+                          builder: (context, child) {
+                            return Container(
+                              height: _ac.value * (_maxHeight - widget.options.initialMinHeight) + widget.options.initialMinHeight,
+                              margin: widget.options.margin,
+                              padding: widget.options.padding,
+                              decoration: widget.options.renderPanelSheet
+                                  ? BoxDecoration(
+                                      border: widget.options.border,
+                                      borderRadius: widget.options.borderRadius,
+                                      boxShadow: widget.options.boxShadow,
+                                      color: widget.options.color,
+                                    )
+                                  : null,
+                              child: child,
+                            );
+                          },
+                          child: Stack(
+                            children: <Widget>[
+                              // open panel
+                              Positioned(
+                                top: widget.options.slideDirection == SlideDirection.UP
+                                    ? 0.0
+                                    : null,
+                                bottom: widget.options.slideDirection == SlideDirection.DOWN
+                                    ? 0.0
+                                    : null,
+                                width: constraints.maxWidth - (widget.options.margin != null ? widget.options.margin!.horizontal : 0) - (widget.options.padding != null ? widget.options.padding!.horizontal : 0),
+                                child: SizedBox(
+                                  height: _maxHeight,
+                                  child: widget.panel ?? widget.panelBuilder!(_sc),
+                                ),
+                              ),
+
+                              // header
+                              widget.header != null
+                                  ? Positioned(
+                                      top: widget.options.slideDirection == SlideDirection.UP
+                                          ? 0.0
+                                          : null,
+                                      bottom: widget.options.slideDirection == SlideDirection.DOWN
+                                          ? 0.0
+                                          : null,
+                                      child: widget.header ?? SizedBox(),
+                                    )
+                                  : Container(),
+
+                              // footer
+                              widget.footer != null
+                                  ? Positioned(
+                                      top: widget.options.slideDirection == SlideDirection.UP
+                                          ? null
+                                          : 0.0,
+                                      bottom: widget.options.slideDirection == SlideDirection.DOWN
+                                          ? null
+                                          : 0.0,
+                                      child: widget.footer ?? SizedBox())
+                                  : Container(),
+
+                              // collapsed panel
+                              Positioned(
+                                top: widget.options.slideDirection == SlideDirection.UP
+                                    ? 0.0
+                                    : null,
+                                bottom: widget.options.slideDirection == SlideDirection.DOWN
+                                    ? 0.0
+                                    : null,
+                                width: constraints.maxWidth - (widget.options.margin != null ? widget.options.margin!.horizontal : 0) - (widget.options.padding != null ? widget.options.padding!.horizontal : 0),
+                                child: SizedBox(
+                                  height: widget.options.initialMinHeight,
+                                  child: widget.collapsed == null
+                                      ? Container()
+                                      : FadeTransition(
+                                          opacity: Tween(begin: 1.0, end: 0.0).animate(_ac),
+
+                                          // if the panel is open ignore pointers (touch events) on the collapsed
+                                          // child so that way touch events go through to whatever is underneath
+                                          child: IgnorePointer(
+                                            ignoring: _isPanelOpen,
+                                            child: widget.collapsed,
+                                          ),
+                                        ),
+                                ),
+                              ),
+                            ],
+                          ),
                         );
                       },
-                      child: Stack(
-                        children: <Widget>[
-                          // open panel
-                          Positioned(
-                            top: widget.options.slideDirection == SlideDirection.UP
-                                ? 0.0
-                                : null,
-                            bottom: widget.options.slideDirection == SlideDirection.DOWN
-                                ? 0.0
-                                : null,
-                            width: constraints.maxWidth - (widget.options.margin != null ? widget.options.margin!.horizontal : 0) - (widget.options.padding != null ? widget.options.padding!.horizontal : 0),
-                            child: SizedBox(
-                              height: widget.options.maxHeight,
-                              child: widget.panel ?? widget.panelBuilder!(_sc),
-                            ),
-                          ),
-
-                          // header
-                          widget.header != null
-                              ? Positioned(
-                                  top: widget.options.slideDirection == SlideDirection.UP
-                                      ? 0.0
-                                      : null,
-                                  bottom: widget.options.slideDirection == SlideDirection.DOWN
-                                      ? 0.0
-                                      : null,
-                                  child: widget.header ?? SizedBox(),
-                                )
-                              : Container(),
-
-                          // footer
-                          widget.footer != null
-                              ? Positioned(
-                                  top: widget.options.slideDirection == SlideDirection.UP
-                                      ? null
-                                      : 0.0,
-                                  bottom: widget.options.slideDirection == SlideDirection.DOWN
-                                      ? null
-                                      : 0.0,
-                                  child: widget.footer ?? SizedBox())
-                              : Container(),
-
-                          // collapsed panel
-                          Positioned(
-                            top: widget.options.slideDirection == SlideDirection.UP
-                                ? 0.0
-                                : null,
-                            bottom: widget.options.slideDirection == SlideDirection.DOWN
-                                ? 0.0
-                                : null,
-                            width: constraints.maxWidth - (widget.options.margin != null ? widget.options.margin!.horizontal : 0) - (widget.options.padding != null ? widget.options.padding!.horizontal : 0),
-                            child: SizedBox(
-                              height: widget.options.minHeight,
-                              child: widget.collapsed == null
-                                  ? Container()
-                                  : FadeTransition(
-                                      opacity: Tween(begin: 1.0, end: 0.0).animate(_ac),
-
-                                      // if the panel is open ignore pointers (touch events) on the collapsed
-                                      // child so that way touch events go through to whatever is underneath
-                                      child: IgnorePointer(
-                                        ignoring: _isPanelOpen,
-                                        child: widget.collapsed,
-                                      ),
-                                    ),
-                            ),
-                          ),
-                        ],
-                      ),
                     ),
                   ),
           ],
@@ -303,17 +322,11 @@ class _SlidingUpPanelState extends State<SlidingUpPanel> with SingleTickerProvid
     );
   }
 
-  @override
-  void dispose() {
-    _ac.dispose();
-    super.dispose();
-  }
-
   double _getParallax() {
     if (widget.options.slideDirection == SlideDirection.UP) {
-      return -_ac.value * (widget.options.maxHeight - widget.options.minHeight) * widget.options.parallaxOffset;
+      return -_ac.value * (_maxHeight - widget.options.initialMinHeight) * widget.options.parallaxOffset;
     } else {
-      return _ac.value * (widget.options.maxHeight - widget.options.minHeight) * widget.options.parallaxOffset;
+      return _ac.value * (_maxHeight - widget.options.initialMinHeight) * widget.options.parallaxOffset;
     }
   }
 
@@ -359,9 +372,9 @@ class _SlidingUpPanelState extends State<SlidingUpPanel> with SingleTickerProvid
     // only slide the panel if scrolling is not enabled
     if (!_scrollingEnabled) {
       if (widget.options.slideDirection == SlideDirection.UP) {
-        _ac.value -= dy / (widget.options.maxHeight - widget.options.minHeight);
+        _ac.value -= dy / (_maxHeight - widget.options.initialMinHeight);
       } else {
-        _ac.value += dy / (widget.options.maxHeight - widget.options.minHeight);
+        _ac.value += dy / (_maxHeight - widget.options.initialMinHeight);
       }
     }
 
@@ -387,15 +400,15 @@ class _SlidingUpPanelState extends State<SlidingUpPanel> with SingleTickerProvid
     double minFlingVelocity = 365.0;
     double kSnap = 8;
 
-    //let the current animation finish before starting a new one
+    // let the current animation finish before starting a new one
     if (_ac.isAnimating) return;
 
     // if scrolling is allowed and the panel is open, we don't want to close
     // the panel if they swipe up on the scrollable
     if (_isPanelOpen && _scrollingEnabled) return;
 
-    //check if the velocity is sufficient to constitute fling to end
-    double visualVelocity = -v.pixelsPerSecond.dy / (widget.options.maxHeight - widget.options.minHeight);
+    // check if the velocity is sufficient to constitute fling to end
+    double visualVelocity = -v.pixelsPerSecond.dy / (_maxHeight - widget.options.initialMinHeight);
 
     // reverse visual velocity to account for slide direction
     if (widget.options.slideDirection == SlideDirection.DOWN) {
@@ -500,8 +513,8 @@ class _SlidingUpPanelState extends State<SlidingUpPanel> with SingleTickerProvid
     });
   }
 
-  // animate the panel position to value - must
-  // be between 0.0 and 1.0
+  // animate the panel position to value -
+  // must be between 0.0 and 1.0
   Future<void> _animatePanelToPosition(double value, {Duration? duration, Curve curve = Curves.linear}) {
     assert(0.0 <= value && value <= 1.0);
     return _ac.animateTo(value, duration: duration, curve: curve);
@@ -512,6 +525,36 @@ class _SlidingUpPanelState extends State<SlidingUpPanel> with SingleTickerProvid
   Future<void> _animatePanelToSnapPoint({Duration? duration, Curve curve = Curves.linear}) {
     assert(widget.options.snapPoint != null);
     return _ac.animateTo(widget.options.snapPoint!, duration: duration, curve: curve);
+  }
+
+  // animate the panel position to the new maxHeight value -
+  // must be greater then [initialMinHeight]
+  void _animatePanelToMaxHeight(double maxHeight, {required Duration duration, Curve curve = Curves.linear}) {
+    assert(widget.options.initialMinHeight <= maxHeight);
+    final controller = AnimationController(
+      duration: duration,
+      vsync: this,
+    );
+
+    final animation = CurveTween(curve: curve).animate(controller);
+    animation.addListener(() {
+      setState(() {
+        _maxHeight = animation.drive(Tween<double>(begin: _maxHeight, end: maxHeight)).value;
+      });
+
+      if (widget.onPanelMaxHeightUpdated != null && !_isPanelClosed) widget.onPanelMaxHeightUpdated!(_maxHeight);
+      widget.controller?.notifyListeners();
+    });
+
+    animation.addStatusListener((status) {
+      if (status == AnimationStatus.completed) {
+        controller.dispose();
+      } else if (status == AnimationStatus.dismissed) {
+        controller.dispose();
+      }
+    });
+
+    controller.forward();
   }
 
   // set the panel position to value - must
@@ -566,8 +609,23 @@ class PanelController with ChangeNotifier {
 
   /// Opens the sliding panel fully
   /// (i.e. to the maxHeight)
-  Future<void> open() {
+  Future<void> open({double? maxHeight}) {
     assert(isAttached, "PanelController must be attached to a SlidingUpPanel");
+    final defaultHeight = _panelState!.widget.options.initialMaxHeight;
+    bool hasChanges = false;
+
+    if (maxHeight == null && defaultHeight != _panelState!._maxHeight) {
+      _panelState!._maxHeight = defaultHeight;
+      hasChanges = true;
+    } else if (maxHeight != null && maxHeight != _panelState!._maxHeight) {
+      _panelState!._maxHeight = maxHeight;
+      hasChanges = true;
+    }
+
+    if (hasChanges) {
+      _panelState!._sliderKey.currentState?.setState(() {});
+    }
+
     return _panelState!._open();
   }
 
@@ -593,6 +651,28 @@ class PanelController with ChangeNotifier {
     assert(isAttached, "PanelController must be attached to a SlidingUpPanel");
     assert(0.0 <= value && value <= 1.0);
     return _panelState!._animatePanelToPosition(value, duration: duration, curve: curve);
+  }
+
+  /// Animates the panel position to the new maxHeight value.
+  /// The value must be greater then [initialMinHeight].
+  /// (optional) duration specifies the time for the animation to complete
+  /// (optional) curve specifies the easing behavior of the animation.
+  void animatePanelToMaxHeight(double maxHeight, {Duration duration = const Duration(milliseconds: 300), Curve curve = Curves.linear}) {
+    assert(isAttached, "PanelController must be attached to a SlidingUpPanel");
+    assert(_panelState!.widget.options.initialMinHeight <= maxHeight);
+
+    final defaultHeight = _panelState!.widget.options.initialMaxHeight;
+    bool hasChanges = false;
+
+    if (defaultHeight != _panelState!._maxHeight) {
+      hasChanges = true;
+    } else if (maxHeight != _panelState!._maxHeight) {
+      hasChanges = true;
+    }
+
+    if (hasChanges) {
+      _panelState!._animatePanelToMaxHeight(maxHeight, duration: duration, curve: curve);
+    }
   }
 
   /// Animates the panel position to the snap point
@@ -623,6 +703,12 @@ class PanelController with ChangeNotifier {
   double get position {
     assert(isAttached, "PanelController must be attached to a SlidingUpPanel");
     return _panelState!._position;
+  }
+
+  /// Gets the current panel max height.
+  double get maxHeight {
+    assert(isAttached, "PanelController must be attached to a SlidingUpPanel");
+    return _panelState!._position * (_panelState!._maxHeight - _panelState!.widget.options.initialMinHeight) + _panelState!.widget.options.initialMinHeight;
   }
 
   /// Returns whether or not the panel is
@@ -656,15 +742,15 @@ class PanelController with ChangeNotifier {
 
 class SlidingUpPanelOptions {
   /// The height of the sliding panel when fully collapsed.
-  final double minHeight;
+  final double initialMinHeight;
 
   /// The height of the sliding panel when fully open.
-  final double maxHeight;
+  final double initialMaxHeight;
 
-  /// A point between [minHeight] and [maxHeight] that the panel snaps to
+  /// A point between [initialMinHeight] and [initialMaxHeight] that the panel snaps to
   /// while animating. A fast swipe on the panel will disregard this point
   /// and go directly to the open/close position. This value is represented as a
-  /// percentage of the total animation distance ([maxHeight] - [minHeight]),
+  /// percentage of the total animation distance ([initialMaxHeight] - [initialMinHeight]),
   /// so it must be between 0.0 and 1.0, exclusive.
   final double? snapPoint;
 
@@ -741,8 +827,8 @@ class SlidingUpPanelOptions {
   final PanelState defaultPanelState;
 
   const SlidingUpPanelOptions({
-    this.minHeight = 100.0,
-    this.maxHeight = 500.0,
+    this.initialMinHeight = 100.0,
+    this.initialMaxHeight = 400.0,
     this.snapPoint,
     this.border,
     this.borderRadius,

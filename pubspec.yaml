@@ -1,6 +1,6 @@
 name: sliding_up_panel_custom
 description: "A draggable Flutter widget that makes implementing a SlidingUpPanel much easier!"
-version: 2.1.0+3
+version: 2.1.1
 homepage: https://github.com/SiKirillo/sliding_up_panel_custom
 
 environment:

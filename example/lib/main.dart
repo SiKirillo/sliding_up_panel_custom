@@ -44,21 +44,36 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   final _controller = PanelController();
-  final _initHeight = 120.0;
-  double _height = 0.0;
+  final _initButtonPosition = 120.0;
+  double _buttonPosition = 0.0;
 
-  double _panelHeightOpen = 0.0;
-  double _panelHeightClosed = 95.0;
+  final _initPanelHeightOpen = 400.0;
+  final _initPanelHeightClosed = 95.0;
+
+  bool _isExpanded = false;
+  double _currentPanelMaxHeight = 0.0;
 
   @override
   void initState() {
     super.initState();
-    _height = _initHeight;
+    _buttonPosition = _initButtonPosition;
+    _currentPanelMaxHeight = _initPanelHeightOpen;
+  }
+
+  void _onUpdatePanelHeight() {
+    if (_isExpanded) {
+      _currentPanelMaxHeight = 400.0;
+      _controller.animatePanelToMaxHeight(400.0);
+      _isExpanded = false;
+    } else {
+      _currentPanelMaxHeight = 500.0;
+      _controller.animatePanelToMaxHeight(500.0);
+      _isExpanded = true;
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    _panelHeightOpen = MediaQuery.of(context).size.height * 0.8;
     return Material(
       child: Stack(
         alignment: Alignment.topCenter,
@@ -68,8 +83,8 @@ class _HomePageState extends State<HomePage> {
             panelBuilder: (sc) => _panel(sc),
             body: _body(),
             options: SlidingUpPanelOptions(
-              maxHeight: _panelHeightOpen,
-              minHeight: _panelHeightClosed,
+              initialMaxHeight: _initPanelHeightOpen,
+              initialMinHeight: _initPanelHeightClosed,
               parallaxEnabled: true,
               parallaxOffset: 0.5,
               borderRadius: BorderRadius.only(
@@ -79,15 +94,25 @@ class _HomePageState extends State<HomePage> {
             ),
             onPanelSlide: (double pos) {
               setState(() {
-                _height = pos * (_panelHeightOpen - _panelHeightClosed) + _initHeight;
+                _buttonPosition = pos * (_currentPanelMaxHeight - _initPanelHeightClosed) + _initButtonPosition;
+              });
+            },
+            onPanelOpened: () {
+              setState(() {
+                _buttonPosition = 1.0 * (_currentPanelMaxHeight - _initPanelHeightClosed) + _initButtonPosition;
+              });
+            },
+            onPanelMaxHeightUpdated: (double pos) {
+              setState(() {
+                _buttonPosition = pos + 25.0;
               });
             },
           ),
           Positioned(
             right: 20.0,
-            bottom: _height,
+            bottom: _buttonPosition,
             child: FloatingActionButton(
-              onPressed: () {},
+              onPressed: _onUpdatePanelHeight,
               backgroundColor: Colors.white,
               child: Icon(
                 Icons.gps_fixed,

@@ -15,11 +15,18 @@ A draggable Flutter widget that makes implementing a SlidingUpPanel much easier!
 
 <br>
 
+## Differences
+Main differences from the previous [sliding_up_panel](https://pub.dev/packages/sliding_up_panel) version:
+- PanelController notify listener
+- You can change the max height of the panel
+- onAttached callback
+- onPanelMaxHeightUpdated callback
+
 ## Installing
 Add the following to your `pubspec.yaml` file:
 ```yaml
 dependencies:
-  sliding_up_panel: ^2.1.0+3
+  sliding_up_panel: ^2.1.1
 ```
 
 ## How to use
