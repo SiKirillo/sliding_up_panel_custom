@@ -111,7 +111,6 @@ class _SlidingUpPanelState extends State<SlidingUpPanel> with TickerProviderStat
   final VelocityTracker _vt = VelocityTracker.withKind(PointerDeviceKind.touch);
 
   final _sliderKey = GlobalKey();
-  double _maxHeight = 0.0;
   bool _isPanelVisible = true;
 
   @override
@@ -569,6 +568,9 @@ class _SlidingUpPanelState extends State<SlidingUpPanel> with TickerProviderStat
   // as a decimal between 0.0 and 1.0
   double get _position => _ac.value;
 
+  // get the current panel max height
+  double _maxHeight = 0.0;
+
   // returns whether or not
   // the panel is still animating
   bool get _isPanelAnimating => _ac.isAnimating;
@@ -705,10 +707,24 @@ class PanelController with ChangeNotifier {
     return _panelState!._position;
   }
 
+  /// Gets the current panel position in pixels.
+  double get positionInPixels {
+    assert(isAttached, "PanelController must be attached to a SlidingUpPanel");
+    return _panelState!._position * (_panelState!._maxHeight - _panelState!.widget.options.initialMinHeight) + _panelState!.widget.options.initialMinHeight;
+  }
+
+  /// Sets the panel max height (without animation).
+  set maxHeight(double value) {
+    assert(isAttached, "PanelController must be attached to a SlidingUpPanel");
+    assert(0.0 <= value);
+    _panelState!._maxHeight = value;
+    _panelState!._sliderKey.currentState?.setState(() {});
+  }
+
   /// Gets the current panel max height.
   double get maxHeight {
     assert(isAttached, "PanelController must be attached to a SlidingUpPanel");
-    return _panelState!._position * (_panelState!._maxHeight - _panelState!.widget.options.initialMinHeight) + _panelState!.widget.options.initialMinHeight;
+    return _panelState!._maxHeight;
   }
 
   /// Returns whether or not the panel is

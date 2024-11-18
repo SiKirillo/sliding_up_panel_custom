@@ -26,7 +26,7 @@ Main differences from the previous [sliding_up_panel](https://pub.dev/packages/s
 Add the following to your `pubspec.yaml` file:
 ```yaml
 dependencies:
-  sliding_up_panel: ^2.1.1
+  sliding_up_panel: ^2.1.1+1
 ```
 
 ## How to use

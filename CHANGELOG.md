@@ -1,25 +1,35 @@
-## [2.1.1] - [November 15, 2024]
-### Features
-- Added changeable panel's maxHeight value. You can set new maxHeight value using PanelController.open() or PanelController.animatePanelToMaxHeight() functions
-- Added onPanelMaxHeightUpdated callback
+## 2.1.1+1
 
-## [2.1.0+3] - [November 12, 2024]
 ### Features
-- Added onAttached callback
+* Added maxHeight setter
 
-## [2.1.0+2] - [November 11, 2024]
-### Features
-- Slide animation fix
-- Added notify listener to PanelController
+## 2.1.1
 
-## [2.1.0+1] - [November 7, 2024]
 ### Features
-- License update
+* Added changeable panel's maxHeight value. You can set new maxHeight value using PanelController.open() or PanelController.animatePanelToMaxHeight() functions
+* Added onPanelMaxHeightUpdated callback
 
-## [2.1.0] - [November 7, 2024]
+## 2.1.0+3
+
 ### Features
-- Code style refactoring
-- Some small performance improvements
+* Added onAttached callback
+
+## 2.1.0+2
+
+### Features
+* Slide animation fix
+* Added notify listener to PanelController
+
+## 2.1.0+1
+
+### Documentation
+* License update
+
+## 2.1.0
+
+### Features
+* Code style refactoring
+* Some small performance improvements
 
 ### Documentation
 - Updated documentation to reflect new features and fixes
